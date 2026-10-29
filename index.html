@@ -95,10 +95,34 @@
       border-radius: 12px;
       background: rgba(255, 255, 250, .96);
       box-shadow: 0 14px 42px rgba(45, 58, 39, .14);
-      pointer-events: none;
+      pointer-events: auto;
       animation: arrive .18s ease-out both;
     }
     .popup[hidden] { display: none; }
+    .popup-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      background: rgba(23, 32, 25, .48);
+    }
+    .popup-backdrop[hidden] { display: none; }
+    .popup.is-large {
+      top: 50%;
+      left: 50%;
+      width: min(680px, calc(100vw - 36px));
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      padding: 22px;
+      transform: translate(-50%, -50%);
+      animation: none;
+    }
+    .popup.is-large .popup-image {
+      width: min(100%, 420px);
+      height: auto;
+      aspect-ratio: 1;
+      margin-right: auto;
+      margin-left: auto;
+    }
     .popup-kicker {
       margin: 0 8px 7px;
       color: #788a72;
@@ -112,6 +136,23 @@
       color: #293d30;
       font: 400 21px/1.15 Georgia, "Times New Roman", serif;
     }
+    #popup-copy { white-space: pre-line; }
+    .popup-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+    .popup-title-row h2 { margin: 0 8px; }
+    .popup-play {
+      display: none;
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 50%;
+      background: #547d5a;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .popup.is-large .popup-play { display: block; }
+    .popup-play:disabled { background: #b9c1b5; cursor: not-allowed; }
     .popup p:last-child { margin: 0 8px; color: #647266; font-size: 13px; line-height: 1.5; }
     .popup-image {
       display: block;
@@ -122,6 +163,8 @@
       background: #e6e9dc;
       object-fit: cover;
     }
+    .popup-audio[hidden], .popup-audio-note[hidden] { display: none; }
+    .popup-audio-note { margin: 12px 8px 0; color: #829080; font-size: 12px; }
     .footer-note {
       position: fixed;
       right: clamp(22px, 5vw, 68px);
@@ -149,47 +192,68 @@
     <h1>Small things,<br>drifting.</h1>
     <p class="hint">Follow a dot. Hover to let it rest.</p>
   </header>
-  <main id="field" aria-label="Sixteen drifting dots. Hover over or focus a dot to see its image."></main>
+  <main id="field" aria-label="Seventeen drifting dots. Hover over or focus a dot to see its image."></main>
+  <div class="popup-backdrop" id="popup-backdrop" hidden></div>
   <aside class="popup" id="popup" role="status" aria-live="polite" hidden>
     <img class="popup-image" id="popup-image" alt="">
     <p class="popup-kicker" id="popup-kicker"></p>
-    <h2 id="popup-title"></h2>
+    <div class="popup-title-row">
+      <h2 id="popup-title"></h2>
+      <button class="popup-play" id="popup-play" type="button" aria-label="Play sound" title="Play sound" disabled>▶</button>
+    </div>
     <p id="popup-copy"></p>
+    <audio id="popup-audio" preload="none" hidden></audio>
+    <p class="popup-audio-note" id="popup-audio-note" hidden></p>
   </aside>
-  <div class="footer-note" aria-hidden="true">Sixteen small discoveries</div>
+  <div class="footer-note" aria-hidden="true">sixteen? small discoveries</div>
   <script>
-    // Customize each dot's content, image, and speed here. Speed 1 is normal, 0.5 is half, 2 is double.
+    // Customize each dot's content, image, sound path, and speed here. Speed 1 is normal.
     const dotData = [
-      { title: "A small discovery 01", description: "Image 01 from the collection.", image: "images/my_diffusion_00 (1).png", speed: 1 },
-      { title: "A small discovery 02", description: "Image 02 from the collection.", image: "images/my_diffusion_01 (1).png", speed: 1.4 },
-      { title: "A small discovery 03", description: "Image 03 from the collection.", image: "images/my_diffusion_02 (1).png", speed: 1 },
-      { title: "A small discovery 04", description: "Image 04 from the collection.", image: "images/my_diffusion_03 (1).png", speed: 1.2 },
-      { title: "A small discovery 05", description: "Image 05 from the collection.", image: "images/my_diffusion_04 (1).png", speed: 1 },
-      { title: "A small discovery 06", description: "Image 06 from the collection.", image: "images/my_diffusion_05 (1).png", speed: 2 },
-      { title: "A small discovery 07", description: "Image 07 from the collection.", image: "images/my_diffusion_06 (1).png", speed: 1 },
-      { title: "A small discovery 08", description: "Image 08 from the collection.", image: "images/my_diffusion_07 (1).png", speed: 1 },
-      { title: "A small discovery 09", description: "Image 09 from the collection.", image: "images/my_diffusion_08 (1).png", speed: 1 },
-      { title: "A small discovery 10", description: "Image 10 from the collection.", image: "images/my_diffusion_09 (1).png", speed: 1 },
-      { title: "A small discovery 11", description: "Image 11 from the collection.", image: "images/my_diffusion_10 (1).png", speed: 0.5 },
-      { title: "A small discovery 12", description: "Image 12 from the collection.", image: "images/my_diffusion_11 (1).png", speed: 1.3 },
-      { title: "A small discovery 13", description: "Image 13 from the collection.", image: "images/my_diffusion_12 (1).png", speed: 1 },
-      { title: "A small discovery 14", description: "Image 14 from the collection.", image: "images/my_diffusion_13 (1).png", speed: 0.3 },
-      { title: "A small discovery 15", description: "Image 15 from the collection.", image: "images/my_diffusion_14 (1).png", speed: 1 },
-      { title: "A small discovery 16", description: "Image 16 from the collection.", image: "images/my_diffusion_15 (1).png", speed: 1 }
+      { title: "A small discovery 01", description: "Image 01 from the collection.", image: "images/my_diffusion_00 (1).png", sound: "", speed: 1 },
+      { title: "A small discovery 02", description: "Image 02 from the collection.", image: "images/my_diffusion_01 (1).png", sound: "./sounds/sound_cow_moo_0.wav", speed: 1.4 },
+      { title: "A small discovery 03", description: "Image 03 from the collection.", image: "images/my_diffusion_02 (1).png", sound: "", speed: 1 },
+      { title: "A small discovery 04", description: "Image 04 from the collection.", image: "images/my_diffusion_03 (1).png", sound: "", speed: 1.2 },
+      { title: "A small discovery 05", description: "Image 05 from the collection.", image: "images/my_diffusion_04 (1).png", sound: "", speed: 1 },
+      { title: "A small discovery 06", description: "Image 06 from the collection.", image: "images/my_diffusion_05 (1).png", sound: "", speed: 2 },
+      { title: "A small discovery 07", description: "Image 07 from the collection.", image: "images/my_diffusion_06 (1).png", sound: "", speed: 1 },
+      { title: "A small discovery 08", description: "Image 08 from the collection.", image: "images/my_diffusion_07 (1).png", sound: "", speed: 1 },
+      { title: "A small discovery 09", description: "Image 09 from the collection.", image: "images/my_diffusion_08 (1).png", sound: "", speed: 1 },
+      { title: "_", description: "__", image: "images/my_diffusion_09 (1).png", sound: "./sounds/sound_fluttering_wings_0.wav", speed: 1 },
+      { title: "Ny (We)", description: "Voomael: “Umi ny nolu orru, vael-hii, umi.”\n(“We feed the rotting ground through our threads; we will grow, feeding.”)", image: "images/my_diffusion_10 (1).png", sound: "./sounds/sound_sarcastic_chirp_0.wav", speed: 0.5 },
+      { title: "A small discovery 12", description: "Image 12 from the collection.", image: "images/my_diffusion_11 (1).png", sound: "", speed: 1.3 },
+      { title: "A small discovery 13", description: "Image 13 from the collection.", image: "images/my_diffusion_12 (1).png", sound: "", speed: 1 },
+      { title: "A small discovery 14", description: "___", image: "images/my_diffusion_13 (1).png", sound: "./sounds/sound_cow_moo_1.wav", speed: 0.3 },
+      { title: "A small discovery 15", description: "Image 15 from the collection.", image: "images/my_diffusion_14 (1).png", sound: "", speed: 1 },
+      { title: "Skitthikk (The Nightweaver)", description: "“Kiss thrett, sse ketta thikk-ik, tak.\n(“Silent prey, I feel my web... close.”)", image: "images/my_diffusion_15 (1).png", sound: "./sounds/sound_creepy_skittering_0.wav", speed: 1 }
     ];
+    // This dot has independent content and movement settings, and flees from the pointer.
+    const cursorAvoiderData = {
+      title: "The Elusive One",
+      description: "This little wanderer always keeps a bit of distance from your cursor.",
+      image: "images/my_diffusion_00 (1).png",
+      sound: "./sounds/sound_melancholy_static_0.wav",
+      speed: 1.2,
+      avoidsCursor: true
+    };
     const colors = ["#547d5a", "#bc805b", "#718b68", "#c19a55", "#657d83", "#a66e5a", "#84945a", "#8b7182", "#548279", "#b37b4e"];
     const field = document.querySelector("#field");
     const popup = document.querySelector("#popup");
+    const popupBackdrop = document.querySelector("#popup-backdrop");
     const popupImage = document.querySelector("#popup-image");
     const popupKicker = document.querySelector("#popup-kicker");
     const popupTitle = document.querySelector("#popup-title");
     const popupCopy = document.querySelector("#popup-copy");
+    const popupAudio = document.querySelector("#popup-audio");
+    const popupAudioNote = document.querySelector("#popup-audio-note");
+    const popupPlay = document.querySelector("#popup-play");
     const dots = [];
+    const pointer = { x: null, y: null };
     let activeDot = null;
+    let pinnedDot = null;
     let lastFrame = performance.now();
 
     function placePopup(dot) {
-      if (!dot || popup.hidden) return;
+      if (!dot || popup.hidden || popup.classList.contains("is-large")) return;
       const rect = dot.element.getBoundingClientRect();
       const box = popup.getBoundingClientRect();
       const gap = 18;
@@ -205,47 +269,95 @@
     function showNote(dot) {
       activeDot = dot;
       dot.element.classList.add("is-open");
-      const data = dotData[dot.index];
-      popupKicker.textContent = `Image ${String(dot.index + 1).padStart(2, "0")}`;
+      const data = dot.data;
+      popupKicker.textContent = dot.avoidsCursor ? "Special dot" : `Image ${String(dot.index + 1).padStart(2, "0")}`;
       popupTitle.textContent = data.title;
       popupCopy.textContent = data.description;
       popupImage.src = data.image;
       popupImage.alt = `${data.title}, from the image collection`;
+      popupAudio.pause();
+      popupAudio.removeAttribute("src");
+      popupAudio.load();
+      popupPlay.disabled = !data.sound;
+      popupPlay.textContent = "\u25B6";
+      popupPlay.setAttribute("aria-label", data.sound ? "Play sound" : "No sound assigned");
+      popupPlay.title = data.sound ? "Play sound" : "No sound assigned to this dot";
+      popupAudioNote.hidden = Boolean(data.sound);
+      popupAudioNote.textContent = data.sound ? "" : "Add a sound path to this dot’s data to enable playback.";
+      if (data.sound) {
+        popupAudio.src = new URL(data.sound, document.baseURI).href;
+        popupAudio.load();
+      }
       popup.hidden = false;
       requestAnimationFrame(() => placePopup(dot));
     }
 
+    popupPlay.addEventListener("click", async () => {
+      if (!popupAudio.hasAttribute("src")) return;
+      if (popupAudio.paused) {
+        try {
+          await popupAudio.play();
+        } catch {
+          popupAudioNote.textContent = "This sound file could not be played. Check its path and format.";
+          popupAudioNote.hidden = false;
+        }
+      } else {
+        popupAudio.pause();
+      }
+    });
+    popupAudio.addEventListener("play", () => {
+      popupPlay.textContent = "\u23F8";
+      popupPlay.setAttribute("aria-label", "Pause sound");
+      popupPlay.title = "Pause sound";
+    });
+    popupAudio.addEventListener("pause", () => {
+      popupPlay.textContent = "\u25B6";
+      popupPlay.setAttribute("aria-label", "Play sound");
+      popupPlay.title = "Play sound";
+    });
+    popupAudio.addEventListener("error", () => {
+      popupAudioNote.textContent = "The sound file could not be loaded. Check that sounds/sound_00.wav is available.";
+      popupAudioNote.hidden = false;
+    });
+
     function hideNote(dot) {
       if (activeDot !== dot) return;
+      if (pinnedDot === dot) return;
       dot.element.classList.remove("is-open");
       activeDot = null;
       popup.hidden = true;
     }
 
-    function createDot(index) {
+    function createDot(data, index, options = {}) {
       const element = document.createElement("button");
       element.className = "dot";
       element.type = "button";
-      element.style.setProperty("--dot-color", colors[index % colors.length]);
-      element.setAttribute("aria-label", `Dot ${index + 1}: ${dotData[index].title}`);
+      element.style.setProperty("--dot-color", options.avoidsCursor ? "#000000" : colors[index % colors.length]);
+      element.setAttribute("aria-label", `${options.avoidsCursor ? "Special dot" : `Dot ${index + 1}`}: ${data.title}`);
       element.setAttribute("aria-describedby", "popup");
       field.appendChild(element);
       const radius = 16;
       const dot = {
-        element, index, radius, speed: dotData[index].speed ?? 1,
+        element, index, data, radius, speed: data.speed ?? 1, avoidsCursor: Boolean(options.avoidsCursor),
         x: radius + Math.random() * Math.max(1, innerWidth - radius * 2),
         y: radius + Math.random() * Math.max(1, innerHeight - radius * 2),
         vx: (Math.random() < .5 ? -1 : 1) * (18 + Math.random() * 27),
         vy: (Math.random() < .5 ? -1 : 1) * (16 + Math.random() * 25),
         paused: false
       };
-      element.addEventListener("pointerenter", () => { dot.paused = true; showNote(dot); });
-      element.addEventListener("pointerleave", () => { dot.paused = false; hideNote(dot); });
+      element.addEventListener("pointerenter", () => { if (!dot.avoidsCursor) dot.paused = true; showNote(dot); });
+      element.addEventListener("pointerleave", () => { if (!dot.avoidsCursor) dot.paused = false; hideNote(dot); });
       element.addEventListener("focus", () => { dot.paused = true; showNote(dot); });
       element.addEventListener("blur", () => { dot.paused = false; hideNote(dot); });
       element.addEventListener("click", () => {
-        if (activeDot === dot) { dot.paused = false; hideNote(dot); }
-        else { if (activeDot) activeDot.paused = false; dot.paused = true; showNote(dot); }
+        if (activeDot && activeDot !== dot) activeDot.paused = false;
+        pinnedDot = dot;
+        dot.paused = true;
+        showNote(dot);
+        popup.style.left = "";
+        popup.style.top = "";
+        popup.classList.add("is-large");
+        popupBackdrop.hidden = false;
       });
       dots.push(dot);
       draw(dot);
@@ -266,6 +378,17 @@
         if (!dot.paused) {
           dot.x += dot.vx * dt * dot.speed;
           dot.y += dot.vy * dt * dot.speed;
+          if (dot.avoidsCursor && pointer.x !== null) {
+            const dx = dot.x - pointer.x;
+            const dy = dot.y - pointer.y;
+            const distance = Math.hypot(dx, dy);
+            const avoidRadius = 170;
+            if (distance < avoidRadius) {
+              const strength = (1 - distance / avoidRadius) * 210;
+              dot.x += (dx / (distance || 1)) * strength * dt * dot.speed;
+              dot.y += (dy / (distance || 1)) * strength * dt * dot.speed;
+            }
+          }
           if (dot.x < dot.radius || dot.x > innerWidth - dot.radius) dot.vx *= -1;
           if (dot.y < dot.radius || dot.y > innerHeight - dot.radius) dot.vy *= -1;
         }
@@ -275,7 +398,20 @@
       requestAnimationFrame(animate);
     }
 
-    for (let i = 0; i < dotData.length; i++) createDot(i);
+    for (let i = 0; i < dotData.length; i++) createDot(dotData[i], i);
+    createDot(cursorAvoiderData, dotData.length, { avoidsCursor: true });
+    popupBackdrop.addEventListener("click", () => {
+      popupAudio.pause();
+      if (pinnedDot) pinnedDot.paused = false;
+      if (activeDot) activeDot.element.classList.remove("is-open");
+      pinnedDot = null;
+      activeDot = null;
+      popup.classList.remove("is-large");
+      popupBackdrop.hidden = true;
+      popup.hidden = true;
+    });
+    addEventListener("pointermove", (event) => { pointer.x = event.clientX; pointer.y = event.clientY; });
+    addEventListener("pointerleave", () => { pointer.x = null; pointer.y = null; });
     addEventListener("resize", () => dots.forEach(draw));
     requestAnimationFrame(animate);
   </script>
