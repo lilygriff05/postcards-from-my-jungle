@@ -21,6 +21,8 @@ I used the codex AI extension to help debug and generate html and css code for m
 
 
 To generate sounds and text for each animal, i took inspiration from the most closely related dataset image. What ever the generated "animal" closest resembles is the starting point for the sound it generates. My goal in doing this is the create an uncanny sensation in the viewer, some animals could make the sounds associated with the image, others look nothing like animals. 
+
+Claud.ai was used to generate the langue for each animal, along with their name, the name of their language and a spoken scentence. each blurb was written in english and the beasts language.
 ## how you generated your fictional beasts' images, sounds, and language
 ## how the quality of the images and sounds could be improved.
 ## If you used any AI assistance or agent, which tool did you use? Was it the free or the paid version?
